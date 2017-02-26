@@ -1,3 +1,7 @@
+'''
+This needs to be done: type activate tensorflow-gpu
+http://www.heatonresearch.com/2017/01/01/tensorflow-windows-gpu.html
+'''
 # Simple CNN model for CIFAR-10
 import datetime
 import dicom
@@ -30,6 +34,7 @@ import progressbar
 import scipy.misc
 from scipy.misc import toimage
 import time
+import tensorflow
 K.set_image_dim_ordering('th')
 
 '''
@@ -117,20 +122,19 @@ def BuildFiles(ids, numberofTrials, IMG_PX_SIZE, featureExtractor, X_ting, label
 	pbar = progressbar.ProgressBar(maxval=1).start()
 	for direc,k in zip(ids['id'],range(0,numberofTrials)):
 		X_t=[]
-		files=[f for f in os.listdir(direc) if (os.path.isfile(os.path.join(direc,f)) and ".dcm" in f.lower())]
+		files=list(os.path.join(direc,f) for f in os.listdir(direc) if (os.path.isfile(os.path.join(direc,f)) and ".dcm" in f.lower()))
 		if labeledData:
 			y_t=ids['cancer'][ids['id']==direc]
 			y_t=y_t.iloc[0]
 			y_t=np.array([y_t])
-		features=np.zeros((len(files),1,4096))
-		files=[os.path.join(direc,file) for file in files]
+		lenfiles=sum(1 for x in files) 
+		features=np.zeros((lenfiles,1,4096))
 		ds=[dicom.read_file(file) for file in files]
 		ds.sort(key=lambda x: int(x.ImagePositionPatient[2]))
 		img=[normalize(np.array(d.pixel_array)) for d in ds]
 		img=[scipy.misc.imresize(im,(IMG_PX_SIZE,IMG_PX_SIZE)) for im in img]
-		X_t=np.zeros((3,IMG_PX_SIZE,IMG_PX_SIZE))
-		X_t=[X_t for i in range(0,len(files))]
-		X_t=[np.concatenate((np.reshape(im,(1,IMG_PX_SIZE,IMG_PX_SIZE)),np.reshape(im,(1,IMG_PX_SIZE,IMG_PX_SIZE)),np.reshape(im,(1,IMG_PX_SIZE,IMG_PX_SIZE))),axis=0) for im in img]
+		reshapedimg=list(np.reshape(im,(1,IMG_PX_SIZE,IMG_PX_SIZE)) for im in img)
+		X_t=list(np.concatenate((reshapedim,reshapedim,reshapedim),axis=0) for reshapedim in reshapedimg)
 		features=np.asarray([featureExtractor.predict([X.reshape(1,3,IMG_PX_SIZE,IMG_PX_SIZE)]) for X in X_t])
 		if labeledData:
 			y_ting[k][:]=np.array(y_t)
@@ -142,7 +146,6 @@ def BuildFiles(ids, numberofTrials, IMG_PX_SIZE, featureExtractor, X_ting, label
 	else:
 		return X_ting
 
-  
 def normalize(image):
 	#function that normalizes the data. The bounds are set prior.
     image = (image - MIN_BOUND) / (MAX_BOUND - MIN_BOUND)
@@ -267,6 +270,60 @@ ts=time.time()
 st=datetime.datetime.fromtimestamp(ts).strftime("%Y%m%d %H%M%S")
 filename=modelsavename+st
 
+numberofSubTrains=int(len(solutions)/2)
+numberofSubTrains2=int(int(len(solutions)-numberofSubTrains)/2+numberofSubTrains)
+solutions1=solutions.iloc[0:numberofSubTrains]
+solutions2=solutions.iloc[numberofSubTrains:numberofSubTrains2]
+solutions3=solutions.iloc[numberofSubTrains2:(numberofTrains)]
+	
+# if preprocessTrainingData:
+	# numberofTrains1=numberofSubTrains
+	# X_training1=np.zeros((numberofSubTrains,mostfiles,4096))
+	# y_training1=np.zeros((numberofSubTrains,1))
+	
+	# #If you are saving the data
+	# X_training1, y_training1 = BuildFiles(solutions1, numberofSubTrains, IMG_PX_SIZE, featureExtractor, X_training1, labeledTrainingData, y_training1)	
+	# np.save("X_training0to1397VGG16pt1.npz",X_training1)
+	# np.save("y_training0to1397VGG16pt1.npz",y_training1)
+# else:
+	# #If you are loading the data
+	# X_training1=np.load("X_training0to1397VGG16pt1.npz.npy")
+	# y_training1=np.load("y_training0to1397VGG16pt1.npz.npy")
+with tensorflow.device('/gpu:0'):
+
+	if preprocessTrainingData:
+		numberofTrains2=len(solutions2.index)
+		print(numberofTrains2)
+		print(mostfiles)
+
+		X_training2=np.zeros((numberofTrains2,mostfiles,4096))
+		y_training2=np.zeros((numberofTrains2,1))
+		#If you are saving the data
+		X_training2, y_training2 = BuildFiles(solutions2, numberofTrains2, IMG_PX_SIZE, featureExtractor, X_training2, labeledTrainingData, y_training2)	
+		np.save("X_training0to1397VGG16pt2.npz",X_training2)
+		np.save("y_training0to1397VGG16pt2.npz",y_training2)
+	else:
+		#If you are loading the data
+		X_training2=np.load("X_training0to1397VGG16pt2.npz.npy")
+		y_training2=np.load("y_training0to1397VGG16pt2.npz.npy")
+
+with tensorflow.device('/gpu:0'):
+
+	if preprocessTrainingData:
+		numberofTrains3=len(solutions3.index)
+
+		X_training3=np.zeros((numberofTrains3,mostfiles,4096))
+		y_training3=np.zeros((numberofTrains3,1))
+		#If you are saving the data
+		X_training3, y_training3 = BuildFiles(solutions3, numberofTrains3, IMG_PX_SIZE, featureExtractor, X_training3, labeledTrainingData, y_training3)	
+		np.save("X_training0to1397VGG16pt3.npz",X_training3)
+		np.save("y_training0to1397VGG16pt3.npz",y_training3)
+	else:
+		#If you are loading the data
+		X_training3=np.load("X_training0to1397VGG16pt3.npz.npy")
+		y_training3=np.load("y_training0to1397VGG16pt3.npz.npy")
+
+		
 if preprocessTestingData:
 	X_testing=np.zeros((numberofTests,mostfiles,4096))
 	y_testing=np.zeros((numberofTests,1))
@@ -277,23 +334,9 @@ if preprocessTestingData:
 		X_testing = BuildFiles(validationList, numberofTests, IMG_PX_SIZE, featureExtractor, X_testing, labeledTestingData, y_testing)	
 	np.save("X_validationVGG16.npz",X_testing)
 else:
-	X_testing=np.load("X_Vrification.npz.npy")
+	X_testing=np.load("X_Verification.npz.npy")
 	if labeledTestingData:
 		y_testing=np.load("y_testing500to700.npz.npy")
-	
-if preprocessTrainingData:
-	X_training=np.zeros((numberofTrains,mostfiles,4096))
-	y_training=np.zeros((numberofTrains,1))
-	
-	#If you are saving the data
-	X_training, y_training = BuildFiles(solutions, numberofTrains, IMG_PX_SIZE, featureExtractor, X_training, labeledTrainingData, y_training)	
-	np.save("X_training0to1397VGG16.npz",X_training)
-	np.save("y_training0to1397VGG16.npz",y_training)
-else:
-	#If you are loading the data
-	X_training=np.load("X_training0to1397VGG16.npz.npy")
-	y_training=np.load("y_training0to1397VGG16.npz.npy")
-
 
 # X_training=np.concatenate((X_training,X_training),axis=0)
 # y_training=np.concatenate((y_training,y_training),axis=0)
