@@ -289,39 +289,34 @@ solutions3=solutions.iloc[numberofSubTrains2:(numberofTrains)]
 	# #If you are loading the data
 	# X_training1=np.load("X_training0to1397VGG16pt1.npz.npy")
 	# y_training1=np.load("y_training0to1397VGG16pt1.npz.npy")
-with tensorflow.device('/gpu:0'):
+if preprocessTrainingData:
+	numberofTrains2=len(solutions2.index)
+	print(numberofTrains2)
+	print(mostfiles)
+	X_training2=np.zeros((numberofTrains2,mostfiles,4096))
+	y_training2=np.zeros((numberofTrains2,1))
+	#If you are saving the data
+	X_training2, y_training2 = BuildFiles(solutions2, numberofTrains2, IMG_PX_SIZE, featureExtractor, X_training2, labeledTrainingData, y_training2)	
+	np.save("X_training0to1397VGG16pt2.npz",X_training2)
+	np.save("y_training0to1397VGG16pt2.npz",y_training2)
+else:
+	#If you are loading the data
+	X_training2=np.load("X_training0to1397VGG16pt2.npz.npy")
+	y_training2=np.load("y_training0to1397VGG16pt2.npz.npy")
 
-	if preprocessTrainingData:
-		numberofTrains2=len(solutions2.index)
-		print(numberofTrains2)
-		print(mostfiles)
-
-		X_training2=np.zeros((numberofTrains2,mostfiles,4096))
-		y_training2=np.zeros((numberofTrains2,1))
-		#If you are saving the data
-		X_training2, y_training2 = BuildFiles(solutions2, numberofTrains2, IMG_PX_SIZE, featureExtractor, X_training2, labeledTrainingData, y_training2)	
-		np.save("X_training0to1397VGG16pt2.npz",X_training2)
-		np.save("y_training0to1397VGG16pt2.npz",y_training2)
-	else:
-		#If you are loading the data
-		X_training2=np.load("X_training0to1397VGG16pt2.npz.npy")
-		y_training2=np.load("y_training0to1397VGG16pt2.npz.npy")
-
-with tensorflow.device('/gpu:0'):
-
-	if preprocessTrainingData:
-		numberofTrains3=len(solutions3.index)
-
-		X_training3=np.zeros((numberofTrains3,mostfiles,4096))
-		y_training3=np.zeros((numberofTrains3,1))
-		#If you are saving the data
-		X_training3, y_training3 = BuildFiles(solutions3, numberofTrains3, IMG_PX_SIZE, featureExtractor, X_training3, labeledTrainingData, y_training3)	
-		np.save("X_training0to1397VGG16pt3.npz",X_training3)
-		np.save("y_training0to1397VGG16pt3.npz",y_training3)
-	else:
-		#If you are loading the data
-		X_training3=np.load("X_training0to1397VGG16pt3.npz.npy")
-		y_training3=np.load("y_training0to1397VGG16pt3.npz.npy")
+if preprocessTrainingData:
+	numberofTrains3=len(solutions3.index)
+	
+	X_training3=np.zeros((numberofTrains3,mostfiles,4096))
+	y_training3=np.zeros((numberofTrains3,1))
+	#If you are saving the data
+	X_training3, y_training3 = BuildFiles(solutions3, numberofTrains3, IMG_PX_SIZE, featureExtractor, X_training3, labeledTrainingData, y_training3)	
+	np.save("X_training0to1397VGG16pt3.npz",X_training3)
+	np.save("y_training0to1397VGG16pt3.npz",y_training3)
+else:
+	#If you are loading the data
+	X_training3=np.load("X_training0to1397VGG16pt3.npz.npy")
+	y_training3=np.load("y_training0to1397VGG16pt3.npz.npy")
 
 		
 if preprocessTestingData:
